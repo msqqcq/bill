@@ -1,0 +1,13 @@
+version: '3'
+services:
+
+  bill:
+    image: bill:latest
+    container_name: bill
+    volumes:
+      - ./db/:/app/db/
+      - ./py:/app/py/
+    ports:
+      - "6060:6060"
+    command: python3 /app/py/app.py
+

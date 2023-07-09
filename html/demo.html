@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>表单</title>
+</head>
+<body>
+  <h1>商品信息</h1>
+
+  <form id="myForm">
+    <table id="dataTable">
+      <tr>
+        <th>标题</th>
+        <th>价格</th>
+        <th>数量</th>
+      </tr>
+      <tr>
+        <td>
+          <select name="title[]" class="title"></select>
+        </td>
+        <td>
+          <input type="text" name="price[]" class="price">
+        </td>
+        <td>
+          <input type="text" name="quantity[]" class="quantity">
+        </td>
+      </tr>
+    </table>
+
+    <button type="button" id="addButton">添加</button>
+    <button type="submit">提交</button>
+  </form>
+
+  <script>
+    const addButton = document.getElementById('addButton');
+    const form = document.getElementById('myForm');
+
+    // 获取标题选项列表并填充下拉框
+    fetch('http://localhost:8080/list')
+  .then(response => {
+    if (response.ok) {
+      return response.json();
+    } else {
+      throw new Error('请求失败');
+    }
+  })
+  .then(data => {
+    const selectElement = document.querySelector('.title');
+
+    if (data.length === 0) {
+      // 如果返回的数据为空，则添加默认值"NA"
+      const optionElement = document.createElement('option');
+      optionElement.value = 'NA';
+      optionElement.textContent = 'NA';
+      selectElement.appendChild(optionElement);
+    } else {
+      data.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option;
+        optionElement.textContent = option;
+        selectElement.appendChild(optionElement);
+      });
+    }
+  })
+  .catch(error => {
+    console.error('获取标题选项失败', error);
+
+    // 在请求失败时添加默认值"NA"
+    const selectElement = document.querySelector('.title');
+    const optionElement = document.createElement('option');
+    optionElement.value = 'NA';
+    optionElement.textContent = 'NA';
+    selectElement.appendChild(optionElement);
+  });
+
+    addButton.addEventListener('click', function() {
+  const dataTable = document.getElementById('dataTable');
+  const newRow = document.createElement('tr');
+
+  const titleCell = document.createElement('td');
+  const titleSelect = document.createElement('select');
+  titleSelect.name = 'title[]';
+  titleSelect.classList.add('title');
+  
+  // 获取标题选项列表
+  const options = Array.from(document.querySelectorAll('.title option'));
+  
+  // 将每个选项复制到新的下拉框中
+  options.forEach(option => {
+    const optionElement = document.createElement('option');
+    optionElement.value = option.value;
+    optionElement.textContent = option.textContent;
+    titleSelect.appendChild(optionElement);
+  });
+  
+  titleCell.appendChild(titleSelect);
+  newRow.appendChild(titleCell);
+
+  const priceCell = document.createElement('td');
+  const priceInput = document.createElement('input');
+  priceInput.type = 'text';
+  priceInput.name = 'price[]';
+  priceInput.classList.add('price');
+  priceCell.appendChild(priceInput);
+  newRow.appendChild(priceCell);
+
+  const quantityCell = document.createElement('td');
+  const quantityInput = document.createElement('input');
+  quantityInput.type = 'text';
+  quantityInput.name = 'quantity[]';
+  quantityInput.classList.add('quantity');
+  quantityCell.appendChild(quantityInput);
+  newRow.appendChild(quantityCell);
+
+  dataTable.appendChild(newRow);
+});
+
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      // 获取表单数据
+      const formData = new FormData(form);
+
+      // 构建请求体
+      const data = {};
+      for (const [name, value] of formData) {
+        if (!data[name]) {
+          data[name] = [];
+        }
+        data[name].push(value);
+      }
+
+      // 发送POST请求保存数据
+      fetch('http://localhost:8080/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+        .then(response => response.json())
+        .then(result => {
+          console.log('保存成功', result);
+          // 在此处可以添加成功保存后的处理逻辑
+        })
+        .catch(error => {
+          console.error('保存失败', error);
+          // 在此处可以添加保存失败后的处理逻辑
+        });
+    });
+  </script>
+</body>
+</html>
