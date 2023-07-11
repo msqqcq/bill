@@ -148,6 +148,34 @@ def list_pd():
         return error(500, "服务器出错")
 
 
+@app.route('/add/sale/<date>', methods=['POST'])
+def add_sale(date):
+    try:
+        sales = request.json
+        if date == '' or sales is None or len(sales) == 0:
+            return error(400, "请填写数据")
+
+        add_sales(date, sales)
+        return ok()
+    except Exception as e:
+        log.error(e)
+        return error(500, "服务器出错")
+
+
+@app.route('/add/rm/sale/<date>', methods=['POST'])
+def rm_sale(date):
+    try:
+        dpm = request.json
+        if date == '':
+            return error(400, "请填写日期")
+
+        clear_sales(date, dpm)
+        return ok()
+    except Exception as e:
+        log.error(e)
+        return error(500, "服务器出错")
+
+
 def get_department():
     table = TinyDB(dpm_db).table(dpm_table)
     return [item['name'] for item in table.all()]
@@ -198,6 +226,28 @@ def update_product(p):
     table.update({"price": p['price']}, Product.name == p['name'])
     db.close()
 
+
+def clear_sales(date, dpm=None):
+    db = TinyDB(sale_db(date))
+    table = db.table(sale_table)
+    if dpm is None or dpm == '':
+        table.truncate()
+    else:
+        Sale = Query()
+        table.remove(Sale.dpm == dpm)
+    db.close()
+
+
+def add_sales(date, sales):
+    db = TinyDB(sale_db(date))
+    table = db.table(sale_table)
+    # TODO
+    table.insert_multiple(sales)
+    db.close()
+
+
+def sale_db(date):
+    return 'sale{}.json'.format(date)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6060)

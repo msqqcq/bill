@@ -21,6 +21,10 @@
             width: 93px;
         }
 
+        #choose_sale_date {
+            width: 110px;
+        }
+
         table th, td {
             text-align: center;  /* 设置单元格内容居中 */
         }
@@ -28,7 +32,7 @@
 </head>
 <body>
 
-<H1></H1>
+<H1>门店信息</H1>
 <button onclick="toggleDiv('dpmDiv', 'dpmToggleBtn', 'dpmToggleIcon')" id="dpmToggleBtn">
     修改门店信息<span id="dpmToggleIcon">></span>
 </button>
@@ -43,7 +47,7 @@
 </div>
 
 
-<H1></H1>
+<H1>产品信息</H1>
 <button onclick="toggleDiv('productDiv', 'productToggleBtn', 'productToggleIcon')" id="productToggleBtn">
     修改产品信息<span id="productToggleIcon">></span>
 </button>
@@ -70,6 +74,11 @@
     统计销售<span id="saleToggleIcon">></span>
 </button>
 <div id="saleDiv" style="display: none">
+    <label for="choose_dpm_name"> 选择门店: </label>
+    <select name="department[]" id="choose_dpm_name" class="department"></select>
+    <label for="choose_sale_date">选择日期: </label>
+    <input type="date" id="choose_sale_date" name="choose_sale_date">
+
     <form id="myForm">
         <table id="dataTable">
             <thead>
@@ -241,38 +250,47 @@
     form.addEventListener('submit', function (event) {
         event.preventDefault();
 
-        // 获取表单数据
-        const formData = new FormData(form);
+        const date = document.getElementById('choose_sale_date').value.trim();
+        const dpm = document.getElementById('choose_dpm_name').value.trim();
 
-        // 构建请求体
-        const data = {};
-        for (const [name, value] of formData) {
-            if (!data[name]) {
-                data[name] = [];
+        if(date && dpm) {
+            // 获取表单数据
+            const formData = new FormData(form);
+
+            // 构建请求体
+            const data = [];
+            for (const [name, price, num] of formData) {
+                const s = {};
+                s['name'] = name;
+                s['price'] = price;
+                s['num'] = num;
+                data.push(s);
             }
-            data[name].push(value);
-        }
 
-        // 发送POST请求保存数据
-        fetch('http://localhost:6060/test', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        })
-            .then(response => {
-                if (response.ok) {
-                    return response.json();
-                } else {
-                    return Promise.reject(response);
-                }
+            // 发送POST请求保存数据
+            fetch('http://localhost:6060/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
             })
-            .then(handleResult)
-            .catch(handleError);
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        return Promise.reject(response);
+                    }
+                })
+                .then(handleResult)
+                .catch(handleError);
+        }else {
+            alert("请选择门店和日期");
+        }
     });
 
     function createSaleTable() {
+        defualtToday('choose_sale_date');
         const dataTable = document.getElementById('dataTable');
         const tbody = dataTable.getElementsByTagName("tbody")[0];
         for(const name in globalProducts){
@@ -405,6 +423,18 @@
             btn.classList.remove("expanded");
             icon.innerHTML = ">"; // 更改为原始箭头
         }
+    }
+
+    function defualtToday(id) {
+        // 获取当前日期
+        var currentDate = new Date();
+        // 格式化日期
+        var year = currentDate.getFullYear();
+        var month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+        var day = currentDate.getDate().toString().padStart(2, '0');
+        var formattedDate = year + '-' + month + '-' + day;
+        // 设置日期输入框的默认值
+        document.getElementById(id).value = formattedDate;
     }
 
 
