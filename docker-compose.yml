@@ -9,5 +9,6 @@ services:
       - ./py:/app/py/
     ports:
       - "6060:6060"
-    command: python3 /app/py/app.py
+#    command: python3 /app/py/app.py
+    command: tail -20f /dev/null
 

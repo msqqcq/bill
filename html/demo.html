@@ -1,152 +1,413 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>表单</title>
+    <title>表单</title>
+    <style>
+        /* 在这里编写您的CSS样式 */
+        #toggleIcon {
+            transition: transform 0.3s ease;
+        }
+
+        #toggleBtn.expanded #toggleIcon {
+            transform: rotate(90deg);
+        }
+
+        select {
+            width: 100px;
+            height: 21px;
+        }
+
+        input {
+            width: 93px;
+        }
+
+        table th, td {
+            text-align: center;  /* 设置单元格内容居中 */
+        }
+    </style>
 </head>
 <body>
-  <h1>商品信息</h1>
 
-  <form id="myForm">
-    <table id="dataTable">
-      <tr>
-        <th>标题</th>
-        <th>价格</th>
-        <th>数量</th>
-      </tr>
-      <tr>
-        <td>
-          <select name="title[]" class="title"></select>
-        </td>
-        <td>
-          <input type="text" name="price[]" class="price">
-        </td>
-        <td>
-          <input type="text" name="quantity[]" class="quantity">
-        </td>
-      </tr>
-    </table>
+<H1></H1>
+<button onclick="toggleDiv('dpmDiv', 'dpmToggleBtn', 'dpmToggleIcon')" id="dpmToggleBtn">
+    修改门店信息<span id="dpmToggleIcon">></span>
+</button>
+<div id="dpmDiv" style="display: none">
+    <label for="add_dpm_name"> 添加门店: </label>
+    <input type="text" id="add_dpm_name" name="add_dpm_name">
+    <button type="button" id="addDpmBtn">添加</button>
+    <br>
+    <label for="del_dpm_name"> 删除门店: </label>
+    <select name="department[]" id="del_dpm_name" class="department"></select>
+    <button type="button" id="delDpmBtn">删除</button>
+</div>
 
-    <button type="button" id="addButton">添加</button>
-    <button type="submit">提交</button>
-  </form>
 
-  <script>
+<H1></H1>
+<button onclick="toggleDiv('productDiv', 'productToggleBtn', 'productToggleIcon')" id="productToggleBtn">
+    修改产品信息<span id="productToggleIcon">></span>
+</button>
+<div id="productDiv" style="display: none">
+    <label for="add_product_name"> 添加产品: </label>
+    <input type="text" id="add_product_name" name="add_product_name" placeholder="名称">
+    <input type="number" id="add_product_price" name="add_product_price" placeholder="价格">
+    <button type="button" id="addProductBtn">添加</button>
+    <br>
+    <label for="update_product_name"> 修改产品: </label>
+    <select name="product[]" id="update_product_name" class="product"></select>
+    <input type="number" id="update_product_price" name="update_product_price" placeholder="价格">
+    <button type="button" id="updateProductBtn">修改</button>
+    <br>
+    <label for="del_product_name"> 删除产品: </label>
+    <select name="product[]" id="del_product_name" class="product"></select>
+    <input type="number" id="del_product_price" name="del_product_price" placeholder="价格" readonly>
+    <button type="button" id="delProductBtn">删除</button>
+</div>
+
+
+<h1>售卖信息</h1>
+<button onclick="toggleDiv('saleDiv', 'saleToggleBtn', 'saleToggleIcon')" id="saleToggleBtn">
+    统计销售<span id="saleToggleIcon">></span>
+</button>
+<div id="saleDiv" style="display: none">
+    <form id="myForm">
+        <table id="dataTable">
+            <thead>
+            <tr>
+                <th>产品名称</th>
+                <th>价格</th>
+                <th>数量</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <button type="button" id="clearSaleButton">清空</button>
+        <button type="submit">提交</button>
+    </form>
+</div>
+
+<script>
+    let globalProducts = {}
+    productPriceListening();
+
+    const addDpmBtn = document.getElementById('addDpmBtn');
+    const delDpmBtn = document.getElementById('delDpmBtn');
+
+    const addProductBtn = document.getElementById('addProductBtn');
+    const updateProductBtn = document.getElementById('updateProductBtn');
+    const delProductBtn = document.getElementById('delProductBtn');
+
+    addDpmBtn.addEventListener('click', function () {
+        const dpm_name = document.getElementById("add_dpm_name").value.trim();
+        if (dpm_name === "") {
+            alert("请输入值");
+            return;
+        } else {
+            fetch('http://localhost:6060/add/dpm', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify([dpm_name])
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        return Promise.reject(response);
+                    }
+                })
+                .then(handleResult)
+                .catch(handleError);
+        }
+    })
+
+    delDpmBtn.addEventListener('click', function () {
+        const dpm_name = document.getElementById("del_dpm_name").value.trim();
+        if (dpm_name === "" || dpm_name === "NA") {
+            alert("请选择一个值");
+            return;
+        } else {
+            fetch('http://localhost:6060/rm/dpm/' + dpm_name, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        return Promise.reject(response);
+                    }
+                })
+                .then(handleResult)
+                .catch(handleError);
+        }
+    })
+
+    addProductBtn.addEventListener('click', function () {
+        const product_name = document.getElementById("add_product_name").value.trim();
+        const product_price = document.getElementById("add_product_price").value.trim();
+        if (product_name && product_price) {
+            fetch('http://localhost:6060/add/product', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({'name': product_name, 'price': product_price})
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        return Promise.reject(response);
+                    }
+                })
+                .then(handleResult)
+                .catch(handleError);
+        } else {
+            alert("请输入值");
+        }
+    })
+
+    updateProductBtn.addEventListener('click', function () {
+        const product_name = document.getElementById("update_product_name").value.trim();
+        const product_price = document.getElementById("update_product_price").value.trim();
+        if (product_name && product_price) {
+            fetch('http://localhost:6060/update/product', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({'name': product_name, 'price': product_price})
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        return Promise.reject(response);
+                    }
+                })
+                .then(handleResult)
+                .catch(handleError);
+        } else {
+            alert("请输入值");
+        }
+    })
+
+    delProductBtn.addEventListener('click', function () {
+        const product_name = document.getElementById("del_product_name").value.trim();
+        if (product_name && product_name !== "NA") {
+            fetch('http://localhost:6060/rm/product/' + product_name, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        return Promise.reject(response);
+                    }
+                })
+                .then(handleResult)
+                .catch(handleError);
+        } else {
+            alert("请输入值");
+        }
+    })
+
     const addButton = document.getElementById('addButton');
     const form = document.getElementById('myForm');
 
     // 获取标题选项列表并填充下拉框
-    fetch('http://localhost:8080/list')
-  .then(response => {
-    if (response.ok) {
-      return response.json();
-    } else {
-      throw new Error('请求失败');
-    }
-  })
-  .then(data => {
-    const selectElement = document.querySelector('.title');
+    fetchOptions('http://localhost:6060/list/dpm', '.department')
+    fetchOptions('http://localhost:6060/list/product', '.product')
 
-    if (data.length === 0) {
-      // 如果返回的数据为空，则添加默认值"NA"
-      const optionElement = document.createElement('option');
-      optionElement.value = 'NA';
-      optionElement.textContent = 'NA';
-      selectElement.appendChild(optionElement);
-    } else {
-      data.forEach(option => {
-        const optionElement = document.createElement('option');
-        optionElement.value = option;
-        optionElement.textContent = option;
-        selectElement.appendChild(optionElement);
-      });
-    }
-  })
-  .catch(error => {
-    console.error('获取标题选项失败', error);
-
-    // 在请求失败时添加默认值"NA"
-    const selectElement = document.querySelector('.title');
-    const optionElement = document.createElement('option');
-    optionElement.value = 'NA';
-    optionElement.textContent = 'NA';
-    selectElement.appendChild(optionElement);
-  });
-
-    addButton.addEventListener('click', function() {
-  const dataTable = document.getElementById('dataTable');
-  const newRow = document.createElement('tr');
-
-  const titleCell = document.createElement('td');
-  const titleSelect = document.createElement('select');
-  titleSelect.name = 'title[]';
-  titleSelect.classList.add('title');
-  
-  // 获取标题选项列表
-  const options = Array.from(document.querySelectorAll('.title option'));
-  
-  // 将每个选项复制到新的下拉框中
-  options.forEach(option => {
-    const optionElement = document.createElement('option');
-    optionElement.value = option.value;
-    optionElement.textContent = option.textContent;
-    titleSelect.appendChild(optionElement);
-  });
-  
-  titleCell.appendChild(titleSelect);
-  newRow.appendChild(titleCell);
-
-  const priceCell = document.createElement('td');
-  const priceInput = document.createElement('input');
-  priceInput.type = 'text';
-  priceInput.name = 'price[]';
-  priceInput.classList.add('price');
-  priceCell.appendChild(priceInput);
-  newRow.appendChild(priceCell);
-
-  const quantityCell = document.createElement('td');
-  const quantityInput = document.createElement('input');
-  quantityInput.type = 'text';
-  quantityInput.name = 'quantity[]';
-  quantityInput.classList.add('quantity');
-  quantityCell.appendChild(quantityInput);
-  newRow.appendChild(quantityCell);
-
-  dataTable.appendChild(newRow);
-});
-
-    form.addEventListener('submit', function(event) {
-      event.preventDefault();
-
-      // 获取表单数据
-      const formData = new FormData(form);
-
-      // 构建请求体
-      const data = {};
-      for (const [name, value] of formData) {
-        if (!data[name]) {
-          data[name] = [];
+    const clearSaleButton = document.getElementById('clearSaleButton');
+    clearSaleButton.addEventListener('click', function () {
+        const dataTable = document.getElementById('dataTable');
+        const tbody = dataTable.querySelector("tbody");
+        while (tbody.firstChild) {
+            tbody.removeChild(tbody.firstChild);
         }
-        data[name].push(value);
-      }
-
-      // 发送POST请求保存数据
-      fetch('http://localhost:8080/save', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      })
-        .then(response => response.json())
-        .then(result => {
-          console.log('保存成功', result);
-          // 在此处可以添加成功保存后的处理逻辑
-        })
-        .catch(error => {
-          console.error('保存失败', error);
-          // 在此处可以添加保存失败后的处理逻辑
-        });
+        createSaleTable();
     });
-  </script>
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        // 获取表单数据
+        const formData = new FormData(form);
+
+        // 构建请求体
+        const data = {};
+        for (const [name, value] of formData) {
+            if (!data[name]) {
+                data[name] = [];
+            }
+            data[name].push(value);
+        }
+
+        // 发送POST请求保存数据
+        fetch('http://localhost:6060/test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return Promise.reject(response);
+                }
+            })
+            .then(handleResult)
+            .catch(handleError);
+    });
+
+    function createSaleTable() {
+        const dataTable = document.getElementById('dataTable');
+        const tbody = dataTable.getElementsByTagName("tbody")[0];
+        for(const name in globalProducts){
+            const price = globalProducts[name];
+            const row = document.createElement("tr");
+            const nameCell = document.createElement("td");
+            const priceCell = document.createElement("td");
+            const numCell = document.createElement("td");
+
+            const numInput = document.createElement('input');
+            numInput.type = 'number';
+            numInput.name = 'num';
+            numInput.value = 0;
+            numCell.appendChild(numInput)
+
+            nameCell.textContent = name;
+            priceCell.textContent = price;
+
+            row.appendChild(nameCell);
+            row.appendChild(priceCell);
+            row.appendChild(numCell);
+            tbody.appendChild(row);
+        }
+    }
+
+    function productPriceListening() {
+        priceListening('update_product_name', 'update_product_price');
+        priceListening('del_product_name', 'del_product_price');
+    }
+
+    function priceListening(nameId, priceId) {
+        const name_elm = document.getElementById(nameId);
+        name_elm.addEventListener("change", function () {
+            const name = name_elm.value.trim();
+            if (name && name !== 'NA') {
+                const price_elm = document.getElementById(priceId);
+                price_elm.value = globalProducts[name]
+            }
+        })
+    }
+
+    function fetchOptions(url, selector) {
+        fetch(url).then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('请求失败');
+            }
+        }).then(data => {
+            data = data.data
+            const selectElements = Array.from(document.querySelectorAll(selector));
+            selectElements.forEach(selectElement => {
+                if (data.length === 0) {
+                    // 如果返回的数据为空，则添加默认值"NA"
+                    const optionElement = document.createElement('option');
+                    optionElement.value = 'NA';
+                    optionElement.textContent = 'NA';
+                    selectElement.appendChild(optionElement);
+                } else {
+                    data.forEach(option => {
+                        if (typeof option === 'object' && !Array.isArray(option) && option !== null) {
+                            option = option.name
+                        }
+                        const optionElement = document.createElement('option');
+                        optionElement.value = option;
+                        optionElement.textContent = option;
+                        selectElement.appendChild(optionElement);
+                    });
+                }
+                selectElement.selectedIndex = -1;
+            });
+            saveGlobal(data, selector)
+            if(selector.includes('product')) {
+                createSaleTable();
+            }
+        }).catch(error => {
+            console.error('获取options失败', error);
+            // 在请求失败时添加默认值"NA"
+            const selectElement = document.querySelectorAll(selector);
+            const optionElement = document.createElement('option');
+            optionElement.value = 'NA';
+            optionElement.textContent = 'NA';
+            selectElement.appendChild(optionElement);
+        });
+    }
+
+    function saveGlobal(data, type) {
+        if (type.includes("product")) {
+            globalProducts = {}
+            for (let i = 0; i < data.length; i++) {
+                const item = data[i];
+                const name = item['name'];
+                globalProducts[name] = item['price'];
+            }
+        }
+    }
+
+    function handleResult(result) {
+        console.log('请求成功', result);
+        // 在此处可以添加成功保存后的处理逻辑
+        const message = result.message;
+        if (message) {
+            window.alert(message); // 弹出提示框显示消息
+        }
+        location.reload(); // 刷新页面
+    }
+
+    function handleError(error) {
+        if (error instanceof Response) {
+            error.json().then(errorData => {
+                const errorMessage = errorData && errorData.message ? errorData.message : '请求失败，请重试！';
+                window.alert(errorMessage); // 弹出提示框
+            });
+        } else {
+            // 其他错误，可能是网络连接问题等
+            window.alert('请求失败，请检查网络连接！');
+        }
+    }
+
+    function toggleDiv(divId, btnId, iconId) {
+        const div = document.getElementById(divId);
+        const btn = document.getElementById(btnId);
+        const icon = document.getElementById(iconId);
+        if (div.style.display === "none") {
+            div.style.display = "block";
+            btn.classList.add("expanded");
+            icon.innerHTML = "v"; // 更改为向下箭头
+        } else {
+            div.style.display = "none";
+            btn.classList.remove("expanded");
+            icon.innerHTML = ">"; // 更改为原始箭头
+        }
+    }
+
+
+</script>
 </body>
 </html>
