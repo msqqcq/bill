@@ -21,13 +21,23 @@
             width: 93px;
         }
 
-        #choose_sale_date {
+        .choose_date {
             width: 110px;
         }
 
-        table th, td {
-            text-align: center;  /* 设置单元格内容居中 */
+        table, th, td {
+            text-align: center;
         }
+
+        table.border {
+            border-collapse: collapse; /* 合并单元格边框 */
+            border: 1px solid black; /* 设置表格整体边框样式 */
+        }
+
+        table.border th, table.border td{
+            border: 1px solid black; /* 设置表格整体边框样式 */
+        }
+
     </style>
 </head>
 <body>
@@ -77,15 +87,16 @@
     <label for="choose_dpm_name"> 选择门店: </label>
     <select name="department[]" id="choose_dpm_name" class="department"></select>
     <label for="choose_sale_date">选择日期: </label>
-    <input type="date" id="choose_sale_date" name="choose_sale_date">
+    <input type="date" id="choose_sale_date" name="choose_sale_date" class="choose_date">
 
-    <form id="myForm">
+    <form id="addSaleForm">
         <table id="dataTable">
             <thead>
             <tr>
                 <th>产品名称</th>
                 <th>价格</th>
                 <th>数量</th>
+                <th>备注</th>
             </tr>
             </thead>
             <tbody>
@@ -97,9 +108,46 @@
     </form>
 </div>
 
+
+<br><br><br>
+
+<button onclick="toggleDiv('checkSaleDiv', 'checkSaleToggleBtn', 'checkSaleToggleIcon')" id="checkSaleToggleBtn">
+    预览数据<span id="checkSaleToggleIcon">></span>
+</button>
+<div id="checkSaleDiv" style="display: none">
+    <label for="choose_dpm_name_for_del"> 选择门店(可不选): </label>
+    <select name="department[]" id="choose_dpm_name_for_check" class="department"></select>
+    <label for="choose_sale_date_for_del">选择日期: </label>
+    <input type="date" id="choose_sale_date_for_check" name="choose_sale_date_for_check" class="choose_date">
+    <button type="button" id="checkSaleBtn">检查</button>
+
+    <table id="checkTable" class="border">
+        <thead>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+
+
+<br><br><br>
+
+<button onclick="toggleDiv('delSaleDiv', 'delSaleToggleBtn', 'delSaleToggleIcon')" id="delSaleToggleBtn">
+    删除销售数据<span id="delSaleToggleIcon">></span>
+</button>
+<div id="delSaleDiv" style="display: none">
+    <label for="choose_dpm_name_for_del"> 选择门店: </label>
+    <select name="department[]" id="choose_dpm_name_for_del" class="department"></select>
+    <label for="choose_sale_date_for_del">选择日期: </label>
+    <input type="date" id="choose_sale_date_for_del" name="choose_sale_date_for_del" class="choose_date">
+    <button type="button" id="delSaleBtn">删除</button>
+</div>
+
+
 <script>
     let globalProducts = {}
     productPriceListening();
+    defualtToday(['choose_sale_date', 'choose_sale_date_for_del', 'choose_sale_date_for_check']);
 
     const addDpmBtn = document.getElementById('addDpmBtn');
     const delDpmBtn = document.getElementById('delDpmBtn');
@@ -107,6 +155,8 @@
     const addProductBtn = document.getElementById('addProductBtn');
     const updateProductBtn = document.getElementById('updateProductBtn');
     const delProductBtn = document.getElementById('delProductBtn');
+    const delSaleBtn = document.getElementById('delSaleBtn');
+    const checkSaleBtn = document.getElementById('checkSaleBtn');
 
     addDpmBtn.addEventListener('click', function () {
         const dpm_name = document.getElementById("add_dpm_name").value.trim();
@@ -230,8 +280,74 @@
         }
     })
 
-    const addButton = document.getElementById('addButton');
-    const form = document.getElementById('myForm');
+    delSaleBtn.addEventListener('click', function () {
+        const date = document.getElementById('choose_sale_date_for_del').value.trim();
+        const dpm = document.getElementById('choose_dpm_name_for_del').value.trim();
+        if (date) {
+            let yes = false;
+            let dpms = []
+            if (dpm && dpm !== 'NA') {
+                yes = confirm("这将删除" + dpm + "在" + date + "全部的数据，确定删除吗？");
+                dpms.push(dpm);
+            } else {
+                yes = confirm("这将删除" + date + "全部的数据，确定删除吗？");
+            }
+
+            if (yes) {
+                fetch('http://localhost:6060/rm/sale/' + date, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(dpms)
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        } else {
+                            return Promise.reject(response);
+                        }
+                    })
+                    .then(handleResult)
+                    .catch(handleError);
+            }
+        } else {
+            alert("请选择日期");
+        }
+    })
+
+    checkSaleBtn.addEventListener('click', function () {
+        const date = document.getElementById('choose_sale_date_for_check').value.trim();
+        let dpm = document.getElementById('choose_dpm_name_for_check').value.trim();
+        if (date) {
+            let dpmt = 'NA';
+            if(dpm){
+                dpmt = dpm;
+            }
+            fetch('http://localhost:6060/check/sale/' + date + '/' + dpmt, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        return Promise.reject(response);
+                    }
+                })
+                .then(data =>{
+                    if(dpm){createSubCheckTable(data.data);}else {createCheckTable(data.data);}
+                })
+                .catch(handleError);
+
+        } else {
+            alert("请选择日期");
+        }
+    })
+
+    const form = document.getElementById('addSaleForm');
 
     // 获取标题选项列表并填充下拉框
     fetchOptions('http://localhost:6060/list/dpm', '.department')
@@ -253,22 +369,28 @@
         const date = document.getElementById('choose_sale_date').value.trim();
         const dpm = document.getElementById('choose_dpm_name').value.trim();
 
-        if(date && dpm) {
+        if (date && dpm) {
             // 获取表单数据
-            const formData = new FormData(form);
+            // const formData = new FormData(form);
 
             // 构建请求体
             const data = [];
-            for (const [name, price, num] of formData) {
-                const s = {};
-                s['name'] = name;
-                s['price'] = price;
-                s['num'] = num;
-                data.push(s);
+            for (const pname in globalProducts) {
+                const n = document.getElementById(pname + 'num');
+                const comment = document.getElementById(pname + 'comment');
+                if (n && n.value > 0) {
+                    const s = {};
+                    s['dpm'] = dpm;
+                    s['name'] = pname;
+                    s['price'] = parseInt(globalProducts[pname]);
+                    s['num'] = parseInt(n.value);
+                    s['comment'] = comment.value;
+                    data.push(s);
+                }
             }
 
             // 发送POST请求保存数据
-            fetch('http://localhost:6060/test', {
+            fetch('http://localhost:6060/add/sale/' + date, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -284,36 +406,69 @@
                 })
                 .then(handleResult)
                 .catch(handleError);
-        }else {
+        } else {
             alert("请选择门店和日期");
         }
     });
 
     function createSaleTable() {
-        defualtToday('choose_sale_date');
         const dataTable = document.getElementById('dataTable');
         const tbody = dataTable.getElementsByTagName("tbody")[0];
-        for(const name in globalProducts){
+        for (const name in globalProducts) {
             const price = globalProducts[name];
             const row = document.createElement("tr");
             const nameCell = document.createElement("td");
             const priceCell = document.createElement("td");
             const numCell = document.createElement("td");
+            const commentCell = document.createElement("td");
 
             const numInput = document.createElement('input');
             numInput.type = 'number';
             numInput.name = 'num';
             numInput.value = 0;
-            numCell.appendChild(numInput)
+            numInput.id = name + 'num';
+            numCell.appendChild(numInput);
+            numCell.setAttribute('name', 'num');
 
             nameCell.textContent = name;
+            nameCell.setAttribute('name', 'pname');
             priceCell.textContent = price;
+            priceCell.setAttribute('name', 'price');
+
+            const commentInput = document.createElement('input');
+            commentInput.type = 'text';
+            commentInput.name = 'comment';
+            commentInput.id = name + 'comment';
+            commentCell.appendChild(commentInput);
+            commentCell.setAttribute('name', 'comment');
 
             row.appendChild(nameCell);
             row.appendChild(priceCell);
             row.appendChild(numCell);
+            row.appendChild(commentCell);
             tbody.appendChild(row);
         }
+    }
+
+    function createSubCheckTable(data) {
+        const dataTable = document.getElementById('checkTable');
+        const tbody = dataTable.querySelector("tbody");
+        while (tbody.firstChild) {
+            tbody.removeChild(tbody.firstChild);
+        }
+        for (const rowData of data) {
+            const row = document.createElement("tr");
+            for (const cellData of rowData) {
+                const cell = document.createElement("td");
+                cell.textContent = cellData;
+                row.appendChild(cell);
+            }
+            tbody.appendChild(row);
+        }
+    }
+
+    function createCheckTable(data) {
+
     }
 
     function productPriceListening() {
@@ -363,7 +518,7 @@
                 selectElement.selectedIndex = -1;
             });
             saveGlobal(data, selector)
-            if(selector.includes('product')) {
+            if (selector.includes('product')) {
                 createSaleTable();
             }
         }).catch(error => {
@@ -425,7 +580,7 @@
         }
     }
 
-    function defualtToday(id) {
+    function defualtToday(ids) {
         // 获取当前日期
         var currentDate = new Date();
         // 格式化日期
@@ -434,7 +589,9 @@
         var day = currentDate.getDate().toString().padStart(2, '0');
         var formattedDate = year + '-' + month + '-' + day;
         // 设置日期输入框的默认值
-        document.getElementById(id).value = formattedDate;
+        for (const id of ids) {
+            document.getElementById(id).value = formattedDate;
+        }
     }
 
 

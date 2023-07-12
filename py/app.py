@@ -70,7 +70,7 @@ def add_dpm():
 @app.route('/rm/dpm/<name>', methods=['POST'])
 def rm_dpm(name):
     try:
-        if name is None or name == 'NA':
+        if is_name_null(name):
             return error(400, "请填写数据")
 
         # dups = check_duplicate_dpm(names)
@@ -101,12 +101,12 @@ def check_duplicate_dpm(names):
 def add_prod():
     try:
         p = request.json
-        if p is None or p['name'] is None or p['name'] == '' or p['price'] is None:
+        if p is None or is_name_null(p['name']) or p['price'] is None:
             return error(400, "请填写数据")
 
         for pp in get_product():
             if pp['name'] == p['name']:
-                return error(409,  "[{}] 已存在".format(p['name']))
+                return error(409, "[{}] 已存在".format(p['name']))
 
         add_products([p])
         return ok()
@@ -119,7 +119,7 @@ def add_prod():
 def update_prod():
     try:
         p = request.json
-        if p is None or p['name'] is None or p['name'] == '' or p['price'] is None:
+        if p is None or is_name_null(p['name']) or p['price'] is None:
             return error(400, "请填写数据")
         update_product(p)
         return ok()
@@ -131,7 +131,7 @@ def update_prod():
 @app.route('/rm/product/<name>', methods=['POST'])
 def rm_prod(name):
     try:
-        if name is None or name == 'NA':
+        if is_name_null(name):
             return error(400, "请填写数据")
         del_product(name)
         return ok('[{}] 已删除'.format(name))
@@ -155,6 +155,8 @@ def add_sale(date):
         if date == '' or sales is None or len(sales) == 0:
             return error(400, "请填写数据")
 
+        sales = [s for s in sales if s['num'] > 0]
+        clear_sales(date, sales[0]['dpm'])
         add_sales(date, sales)
         return ok()
     except Exception as e:
@@ -162,18 +164,104 @@ def add_sale(date):
         return error(500, "服务器出错")
 
 
-@app.route('/add/rm/sale/<date>', methods=['POST'])
+@app.route('/rm/sale/<date>', methods=['POST'])
 def rm_sale(date):
     try:
-        dpm = request.json
+        dpms = request.json
         if date == '':
             return error(400, "请填写日期")
 
-        clear_sales(date, dpm)
+        if dpms is None or len(dpms) == 0:
+            dpms = ['']
+        for dpm in dpms:
+            clear_sales(date, dpm)
         return ok()
     except Exception as e:
         log.error(e)
         return error(500, "服务器出错")
+
+
+@app.route('/check/sale/<date>/<dpm>', methods=['GET'])
+def check_sale(date, dpm):
+    try:
+        if date == '':
+            return error(400, "请填写日期")
+
+        data = generate_table(date, dpm)
+        return ok(data=data)
+    except Exception as e:
+        log.error(e)
+        return error(500, "服务器出错")
+
+
+def generate_table(date, dpm=None):
+    data = get_sales(date, dpm)
+    rows = []
+    if is_name_null(dpm):
+        dpms, products = get_dpm_and_products_from_sales(data)
+        price_count = 0
+        row1 = [''] + [d for d in dpms] + ['数量', '价格', '总计']
+        rows.append(row1)
+
+        for p in products:
+            row = [p]
+            for i in range(1, len(row1) - 3):
+                row.append(count_sale_with_dpm(p, row1[i], sales))
+            row.append(products[p]['num'])
+            row.append(products[p]['price'])
+            pc = products[p]['num'] * products[p]['price']
+            row.append(pc)
+            price_count += pc
+            rows.append(row)
+
+        row_end = ['总计']
+        for i in range(1, len(row1) - 3):
+            row_end.append(dpms[row1[i]]['sales'])
+        row_end.append('')
+        row_end.append('')
+        row_end.append(price_count)
+        rows.append(row_end)
+
+    else:
+        row1 = ['app', '下载', '备注', '价格', '总计']
+        rows.append(row1)
+        count = 0
+        price_count = 0
+        for sale in data:
+            price = sale['num'] * sale['price']
+            row = [sale['name'], sale['num'], sale['comment'], sale['price'], price]
+            rows.append(row)
+            count += sale['num']
+            price_count += price
+        row_end = ['总计', count, '', '', price_count]
+        rows.append(row_end)
+    return rows
+
+
+def count_sale_with_dpm(pname, dpm, sales):
+    count = 0
+    for s in sales:
+        if s['name'] == pname and s['dpm'] == dpm:
+            count += 1
+    if count == 0:
+        return ''
+    return str(count)
+
+
+def get_dpm_and_products_from_sales(sales):
+    dpms = {}
+    products = {}
+    for s in sales:
+        if dpms[s['dpm']] is None:
+            dpms[s['dpm']] = {'sales': 1}
+        else:
+            dpms[s['dpm']]['sales'] += 1
+
+        if products[s['name']] is None:
+            products[s['name']] = {'price': s['price'], 'num': s['num']}
+        else:
+            products[s['name']]['num'] += s['num']
+    return dpms, products
 
 
 def get_department():
@@ -230,7 +318,7 @@ def update_product(p):
 def clear_sales(date, dpm=None):
     db = TinyDB(sale_db(date))
     table = db.table(sale_table)
-    if dpm is None or dpm == '':
+    if is_name_null(dpm):
         table.truncate()
     else:
         Sale = Query()
@@ -241,13 +329,31 @@ def clear_sales(date, dpm=None):
 def add_sales(date, sales):
     db = TinyDB(sale_db(date))
     table = db.table(sale_table)
-    # TODO
     table.insert_multiple(sales)
     db.close()
 
 
+def get_sales(date, dpm=None):
+    db = TinyDB(sale_db(date))
+    table = db.table(sale_table)
+    if is_name_null(dpm):
+        data = table.all()
+    else:
+        Sale = Query()
+        data = table.search(Sale.dpm == dpm)
+    db.close()
+    return data
+
+
+def is_name_null(name):
+    if name is None or name == '' or name == 'NA':
+        return True
+    return False
+
+
 def sale_db(date):
-    return 'sale{}.json'.format(date)
+    return '{}sale{}.json'.format(db_dir, date)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6060)
