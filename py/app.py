@@ -2,8 +2,11 @@ from tinydb import TinyDB, Query
 from flask import Flask, make_response, jsonify, request
 from datetime import datetime
 from flask_cors import CORS
+from openpyxl import Workbook
+from io import BytesIO
 import logging
 import json
+import string
 
 app = Flask(__name__)
 CORS(app, methods=["GET", "POST"])
@@ -17,10 +20,17 @@ product_table = "Product"
 sale_table = "Sale"
 
 log = logging.getLogger('flask_app')
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
+console_handler.setLevel(logging.DEBUG)
 log.addHandler(console_handler)
+
+
+def file(filename, data):
+    response = make_response(data)
+    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response.headers['Content-Disposition'] = 'attachment; filename={}'.format(filename.encode('utf-8'))
+    return response
 
 
 def ok(msg='OK', data=None):
@@ -194,19 +204,65 @@ def check_sale(date, dpm):
         return error(500, "服务器出错")
 
 
+@app.route('/download/<date>/<dpm>', methods=['GET'])
+def download(date, dpm):
+    try:
+        if date == '':
+            return error(400, "请填写日期")
+        bytes = generate_sub_excel(generate_table(date, dpm))
+        if is_name_null(dpm):
+            filename = '总表_{}.xlsx'.format(dpm, date)
+        else:
+            filename = '{}_{}.xlsx'.format(dpm, date)
+        return file(filename, bytes)
+    except Exception as e:
+        log.error(e)
+        return error(500, "服务器出错")
+
+
+def generate_sub_excel(data):
+    # 创建工作簿和表格
+    wb = Workbook()
+    ws = wb.active
+
+    cells = get_excel_columns()
+
+    for i in range(0, len(data)):
+        row_data = data[i]
+        for j in range(0, len(row_data)):
+            idx = cells[j] + str(i + 2)
+            ws[idx] = row_data[j]
+
+    # 将工作簿保存为字节流
+    stream = BytesIO()
+    wb.save(stream)
+    bytes = stream.getvalue()
+    stream.close()
+    return bytes
+
+
+def get_excel_columns():
+    columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U',
+               'V', 'W', 'X', 'Y', 'Z']
+    return columns
+
+
 def generate_table(date, dpm=None):
     data = get_sales(date, dpm)
     rows = []
     if is_name_null(dpm):
+        log.info("1111")
         dpms, products = get_dpm_and_products_from_sales(data)
+        log.info(products)
         price_count = 0
         row1 = [''] + [d for d in dpms] + ['数量', '价格', '总计']
+        log.info(row1)
         rows.append(row1)
 
         for p in products:
             row = [p]
             for i in range(1, len(row1) - 3):
-                row.append(count_sale_with_dpm(p, row1[i], sales))
+                row.append(count_sale_with_dpm(p, row1[i], data))
             row.append(products[p]['num'])
             row.append(products[p]['price'])
             pc = products[p]['num'] * products[p]['price']
@@ -216,7 +272,7 @@ def generate_table(date, dpm=None):
 
         row_end = ['总计']
         for i in range(1, len(row1) - 3):
-            row_end.append(dpms[row1[i]]['sales'])
+            row_end.append(dpms[row1[i]])
         row_end.append('')
         row_end.append('')
         row_end.append(price_count)
@@ -242,7 +298,7 @@ def count_sale_with_dpm(pname, dpm, sales):
     count = 0
     for s in sales:
         if s['name'] == pname and s['dpm'] == dpm:
-            count += 1
+            count += s['num']
     if count == 0:
         return ''
     return str(count)
@@ -251,16 +307,20 @@ def count_sale_with_dpm(pname, dpm, sales):
 def get_dpm_and_products_from_sales(sales):
     dpms = {}
     products = {}
-    for s in sales:
-        if dpms[s['dpm']] is None:
-            dpms[s['dpm']] = {'sales': 1}
-        else:
-            dpms[s['dpm']]['sales'] += 1
+    log.info(sales)
+    try:
+        for s in sales:
+            if s['dpm'] not in dpms:
+                dpms[s['dpm']] = s['num']
+            else:
+                dpms[s['dpm']] += s['num']
 
-        if products[s['name']] is None:
-            products[s['name']] = {'price': s['price'], 'num': s['num']}
-        else:
-            products[s['name']]['num'] += s['num']
+            if s['name'] not in products:
+                products[s['name']] = {'price': s['price'], 'num': s['num']}
+            else:
+                products[s['name']]['num'] += s['num']
+    except Exception as e:
+        log.error("error", e)
     return dpms, products
 
 

@@ -34,7 +34,7 @@
             border: 1px solid black; /* 设置表格整体边框样式 */
         }
 
-        table.border th, table.border td{
+        table.border th, table.border td {
             border: 1px solid black; /* 设置表格整体边框样式 */
         }
 
@@ -143,11 +143,25 @@
     <button type="button" id="delSaleBtn">删除</button>
 </div>
 
+<br><br><br>
+<button onclick="toggleDiv('downloadDiv', 'downloadToggleBtn', 'downloadToggleIcon')" id="downloadToggleBtn">
+    财务报表<span id="downloadToggleIcon">></span>
+</button>
+<div id="downloadDiv" style="display: none">
+    <label for="choose_sale_date_for_download">选择日期: </label>
+    <input type="date" id="choose_sale_date_for_download" name="choose_sale_date_for_download" class="choose_date">
+    <button type="button" id="downloadTotalBtn" onclick="downloadTotalExcel()">下载总表</button>
+    <br>
+    <label for="choose_dpm_name_for_download"> 选择门店: </label>
+    <select name="department[]" id="choose_dpm_name_for_download" class="department"></select>
+    <button type="button" id="downloadSubBtn" onclick="downloadSubExcel()">下载分表</button>
+</div>
+
 
 <script>
     let globalProducts = {}
     productPriceListening();
-    defualtToday(['choose_sale_date', 'choose_sale_date_for_del', 'choose_sale_date_for_check']);
+    defualtToday(['choose_sale_date', 'choose_sale_date_for_del', 'choose_sale_date_for_check', 'choose_sale_date_for_download']);
 
     const addDpmBtn = document.getElementById('addDpmBtn');
     const delDpmBtn = document.getElementById('delDpmBtn');
@@ -321,7 +335,7 @@
         let dpm = document.getElementById('choose_dpm_name_for_check').value.trim();
         if (date) {
             let dpmt = 'NA';
-            if(dpm){
+            if (dpm) {
                 dpmt = dpm;
             }
             fetch('http://localhost:6060/check/sale/' + date + '/' + dpmt, {
@@ -337,8 +351,8 @@
                         return Promise.reject(response);
                     }
                 })
-                .then(data =>{
-                    if(dpm){createSubCheckTable(data.data);}else {createCheckTable(data.data);}
+                .then(data => {
+                    createCheckTable(data.data);
                 })
                 .catch(handleError);
 
@@ -411,6 +425,50 @@
         }
     });
 
+    function downloadSubExcel() {
+        const date = document.getElementById('choose_sale_date_for_download').value.trim();
+        const dpm = document.getElementById('choose_dpm_name_for_download').value.trim();
+        if (date && dpm && dpm !== 'NA') {
+            downloadExcel(date, dpm);
+        } else {
+            alert("请选择日期和门店");
+        }
+    }
+
+    function downloadTotalExcel() {
+        const date = document.getElementById('choose_sale_date_for_download').value.trim();
+        if (date) {
+            downloadExcel(date, '');
+        } else {
+            alert("请选择日期");
+        }
+    }
+
+    function downloadExcel(date, dpm) {
+        let dpmt = 'NA';
+        let file = '总表_' + date
+        if (dpm && dpm !== dpmt) {
+            dpmt = dpm;
+            file = dpm + '_' + date
+        }
+        fetch('http://localhost:6060/download/' + date + '/' + dpmt)
+            .then(response => {
+                const contentDisposition = response.headers.get('content-disposition');
+                const filename = contentDisposition ? contentDisposition.split('filename=')[1] : file + '.xlsx';
+                return response.blob().then(blob => ({blob, filename}));
+            })
+            .then(({blob, filename}) => {
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            })
+            .catch(handleError);
+    }
+
     function createSaleTable() {
         const dataTable = document.getElementById('dataTable');
         const tbody = dataTable.getElementsByTagName("tbody")[0];
@@ -450,7 +508,7 @@
         }
     }
 
-    function createSubCheckTable(data) {
+    function createCheckTable(data) {
         const dataTable = document.getElementById('checkTable');
         const tbody = dataTable.querySelector("tbody");
         while (tbody.firstChild) {
@@ -461,14 +519,11 @@
             for (const cellData of rowData) {
                 const cell = document.createElement("td");
                 cell.textContent = cellData;
+                cell.style.width = '100px';
                 row.appendChild(cell);
             }
             tbody.appendChild(row);
         }
-    }
-
-    function createCheckTable(data) {
-
     }
 
     function productPriceListening() {
