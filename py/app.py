@@ -6,12 +6,14 @@ from openpyxl import Workbook
 from io import BytesIO
 import logging
 import json
-import string
+import os
 
 app = Flask(__name__)
 CORS(app, methods=["GET", "POST"])
 
-db_dir = '/app/db/'
+current_dir = os.path.dirname(__file__)
+db_dir = os.path.join(current_dir, 'db/')
+os.makedirs(db_dir, exist_ok=True)
 dpm_db = db_dir + "department.json"
 dpm_table = "Department"
 product_db = db_dir + "product.json"
