@@ -10,5 +10,10 @@ services:
     ports:
       - "6060:6060"
 #    command: python3 /app/py/app.py
-    command: tail -20f /dev/null
+#    command: tail -20f /dev/null
 
+  bill2:
+    image: msqqcq/billing-hxq:1.0
+    container_name: bill2
+    ports:
+      - "6060:6060"
