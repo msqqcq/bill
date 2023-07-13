@@ -251,12 +251,9 @@ def generate_table(date, dpm=None):
     data = get_sales(date, dpm)
     rows = []
     if is_name_null(dpm):
-        log.info("1111")
         dpms, products = get_dpm_and_products_from_sales(data)
-        log.info(products)
         price_count = 0
         row1 = [''] + [d for d in dpms] + ['数量', '价格', '总计']
-        log.info(row1)
         rows.append(row1)
 
         for p in products:
@@ -307,7 +304,6 @@ def count_sale_with_dpm(pname, dpm, sales):
 def get_dpm_and_products_from_sales(sales):
     dpms = {}
     products = {}
-    log.info(sales)
     try:
         for s in sales:
             if s['dpm'] not in dpms:
