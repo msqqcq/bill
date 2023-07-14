@@ -3,6 +3,7 @@ from flask import Flask, make_response, jsonify, request
 from datetime import datetime
 from flask_cors import CORS
 from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
 from io import BytesIO
 import logging
 import json
@@ -35,7 +36,7 @@ def file(filename, data):
     return response
 
 
-def ok(msg='OK', data=None):
+def ok(msg='', data=None):
     response_data = {
         'message': msg,
         'data': data
@@ -193,6 +194,16 @@ def rm_sale(date):
         return error(500, "服务器出错")
 
 
+@app.route('/list/sale/<date>', methods=['GET'])
+def list_sale(date):
+    try:
+        if date == '':
+            return error(400, "请填写日期")
+        return ok(data=get_sales(date))
+    except Exception as e:
+        return error(500, "服务器出错")
+
+
 @app.route('/check/sale/<date>/<dpm>', methods=['GET'])
 def check_sale(date, dpm):
     try:
@@ -211,7 +222,7 @@ def download(date, dpm):
     try:
         if date == '':
             return error(400, "请填写日期")
-        bytes = generate_sub_excel(generate_table(date, dpm))
+        bytes = generate_sub_excel(dpm, generate_table(date, dpm))
         if is_name_null(dpm):
             filename = '总表_{}.xlsx'.format(dpm, date)
         else:
@@ -222,12 +233,21 @@ def download(date, dpm):
         return error(500, "服务器出错")
 
 
-def generate_sub_excel(data):
+def generate_sub_excel(dpm, data):
     # 创建工作簿和表格
     wb = Workbook()
     ws = wb.active
 
     cells = get_excel_columns()
+
+    if not is_name_null(dpm):
+        # excel title
+        ws['A1'] = dpm
+        ws.merge_cells('A1:{}1'.format(cells[len(data[0])-1]))
+        merge_cell = ws['A1']
+        merge_cell.alignment = Alignment(horizontal='center', vertical='center')
+        merge_cell.font = Font(name='Arial', size=12, bold=True, color='000000')
+        merge_cell.fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
 
     for i in range(0, len(data)):
         row_data = data[i]
