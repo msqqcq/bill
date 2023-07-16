@@ -184,7 +184,6 @@ def list_pd():
 def add_sale(date):
     try:
         sales = request.json
-        log.info(sales)
         if date == '' or sales is None or len(sales) == 0:
             return error(400, "请填写数据")
 
@@ -263,18 +262,6 @@ def generate_excel(dpm, data, date):
 
     cells = get_excel_columns()
 
-    if not is_name_null(dpm):
-        ws['A1'] = dpm
-    else:
-        ws['A1'] = date + ' 收入'
-    # excel title
-    ws.merge_cells('A1:{}1'.format(cells[len(data[0])-1]))
-    merge_cell = ws['A1']
-    merge_cell.alignment = Alignment(horizontal='center', vertical='center')
-    merge_cell.font = Font(name='Arial', size=12, bold=True, color='000000')
-    merge_cell.fill = yellow_fill
-
-
     for i in range(0, len(data)):
         row_data = data[i]
         for j in range(0, len(row_data)):
@@ -287,10 +274,31 @@ def generate_excel(dpm, data, date):
                 elif row_data[1] == '总计':
                     ws[idx].fill = bule_fill
             else:
-                if j == len(row_data)-1:
+                if j == len(row_data) - 1:
                     ws[idx].fill = green_fill
-                elif j == len(row_data)-3 or (row_data[0] == '总计' and j < len(row_data)-3):
+                elif (i < len(data) - 2 and j == len(row_data) - 3) or (row_data[0] == '总计' and j < len(row_data) - 3):
                     ws[idx].fill = bule_fill
+
+    # 适配所有列宽
+    for column in ws.columns:
+        max_length = 5
+        column = [cell for cell in column]
+        for cell in column:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        adjusted_width = 2 * max_length
+        ws.column_dimensions[column[0].column_letter].width = adjusted_width
+
+    # 添加 title
+    if not is_name_null(dpm):
+        ws['A1'] = '{} {}'.format(dpm, date)
+    else:
+        ws['A1'] = date + ' 收入'
+    ws.merge_cells('A1:{}1'.format(cells[len(data[0]) - 1]))
+    merge_cell = ws['A1']
+    merge_cell.alignment = Alignment(horizontal='center', vertical='center')
+    # merge_cell.font = Font(name='Arial', size=12, bold=True, color='000000')
+    merge_cell.fill = yellow_fill
 
     # 将工作簿保存为字节流
     stream = BytesIO()
@@ -334,6 +342,42 @@ def generate_table(date, dpm=None):
         row_end.append(price_count)
         rows.append(row_end)
 
+        row_old = ['养老金的券']
+        row_income = ['收入']
+        old_count = 0
+        sale_with_old_pension = get_old_pensions(date)
+        if sale_with_old_pension is None:
+            sale_with_old_pension = []
+        else:
+            for s in sale_with_old_pension:
+                pension = count_old_pension(s['comment'])
+                if pension < 0:  # 如果计算出错，直接将最后一格填充：养老金的券格式有问题，无法计算
+                    old_count = -1
+                    sale_with_old_pension = []
+                    break
+                else:
+                    old_count += pension
+
+        for d in dpms:
+            cell_value = ''
+            for s in sale_with_old_pension:
+                if s['dpm'] == d:
+                    cell_value = s['comment']
+                    break
+            row_old.append(cell_value)
+            row_income.append("")
+
+        if old_count < 0:
+            row_old += ["", "", "养老金的券格式有问题，无法计算"]
+            row_income += ["", "", price_count]
+        else:
+            row_old += ["", "", old_count]
+            row_income += ["", "", old_count + price_count]
+
+        rows.append(row_old)
+        rows.append(row_income)
+
+
     else:
         count = 0
         price_count = 0
@@ -371,6 +415,23 @@ def generate_table(date, dpm=None):
     return rows
 
 
+def count_old_pension(comment):
+    try:
+        count = 0
+        if comment is not None and comment.strip() != "":
+            if "+" in comment:
+                datas = comment.strip().split("+")
+            else:
+                datas = comment.strip()
+            for data in datas:
+                if "*" in comment:
+                    cal = data.strip().split("*")
+                    count += int(cal[0]) * int(cal[1])
+        return count
+    except Exception as e:
+        return -1
+
+
 def count_sale_with_dpm(pname, dpm, sales):
     count = 0
     for s in sales:
@@ -378,7 +439,7 @@ def count_sale_with_dpm(pname, dpm, sales):
             count += s['num']
     if count == 0:
         return ''
-    return str(count)
+    return count
 
 
 def split_sales_by_type(sales):
@@ -390,7 +451,6 @@ def split_sales_by_type(sales):
         else:
             freeze.append(s)
     return apps, freeze
-
 
 
 def get_dpm_and_products_from_sales(sales):
@@ -497,6 +557,15 @@ def get_sales(date, dpm=None):
     else:
         Sale = Query()
         data = table.search(Sale.dpm == dpm)
+    db.close()
+    return data
+
+
+def get_old_pensions(date):
+    db = TinyDB(sale_db(date))
+    table = db.table(sale_table)
+    Sale = Query()
+    data = table.search(Sale.comment != '')
     db.close()
     return data
 
