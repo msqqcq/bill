@@ -13,12 +13,12 @@
         }
 
         select {
-            width: 100px;
+            width: 115px;
             height: 21px;
         }
 
         input {
-            width: 93px;
+            width: 107px;
         }
 
         .choose_date {
@@ -38,123 +38,131 @@
             border: 1px solid black; /* 设置表格整体边框样式 */
         }
 
+        .container {
+            overflow: hidden; /* 清除浮动 */
+        }
+
+        .left {
+            float: left;
+            width: 30%; /* 左边内容宽度占比 */
+        }
+
+        .right {
+            float: right;
+            width: 70%; /* 右边内容宽度占比 */
+        }
+
     </style>
 </head>
 <body>
 
-<h1>售卖信息</h1>
-<!--<button onclick="toggleDiv('saleDiv', 'saleToggleBtn', 'saleToggleIcon')" id="saleToggleBtn">-->
-<!--    统计销售<span id="saleToggleIcon">></span>-->
-<!--</button>-->
-<div id="saleDiv" style="display: block">
-    <label for="choose_dpm_name"> 选择门店: </label>
-    <select name="department[]" id="choose_dpm_name" class="department"></select>
-    <label for="choose_sale_date">选择日期: </label>
-    <input type="date" id="choose_sale_date" name="choose_sale_date" class="choose_date">
+<div class="container">
+    <div class="right">
 
-    <form id="addSaleForm">
-        <table id="dataTable">
-            <thead>
-            <tr>
-                <th>产品名称</th>
-                <th>价格</th>
-                <th>数量</th>
-                <th>备注</th>
-            </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
+        <div class="container">
+            <div id="saleDiv" style="display: block; float: left; width: 50%">
+                <h1>售卖信息</h1>
+                <label for="choose_dpm_name"> 选择门店: </label>
+                <select name="department[]" id="choose_dpm_name" class="department"></select>
+                <label for="choose_sale_date">选择日期: </label>
+                <input type="date" id="choose_sale_date" name="choose_sale_date" class="choose_date">
 
-        <button type="button" id="clearSaleButton">清空</button>
-        <button type="submit">提交</button>
-    </form>
-</div>
+                <form id="addSaleForm">
+                    <table id="dataTable">
+                        <thead>
+                        <tr>
+                            <th>产品名称</th>
+                            <th>价格</th>
+                            <th>数量</th>
+                            <th>备注</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
 
+                    <button type="button" id="clearSaleButton">清空</button>
+                    <button type="submit">提交</button>
+                </form>
+            </div>
 
-<h1>预览</h1>
+            <div id="delSaleDiv" style="display: block; float: right; width: 50%">
+                <h1>删除信息</h1>
+                <label for="choose_dpm_name_for_del"> 选择门店: </label>
+                <select name="department[]" id="choose_dpm_name_for_del" class="department"></select><br>
+                <label for="choose_sale_date_for_del">选择日期: </label>
+                <input type="date" id="choose_sale_date_for_del" name="choose_sale_date_for_del"
+                       class="choose_date"><br>
+                <button type="button" id="delSaleBtn">删除</button>
 
-<!--<button onclick="toggleDiv('checkSaleDiv', 'checkSaleToggleBtn', 'checkSaleToggleIcon')" id="checkSaleToggleBtn">-->
-<!--    预览数据<span id="checkSaleToggleIcon">></span>-->
-<!--</button>-->
-<div id="checkSaleDiv" style="display: block">
-    <label for="choose_dpm_name_for_del"> 选择门店(可不选): </label>
-    <select name="department[]" id="choose_dpm_name_for_check" class="department"></select>
-    <label for="choose_sale_date_for_del">选择日期: </label>
-    <input type="date" id="choose_sale_date_for_check" name="choose_sale_date_for_check" class="choose_date">
-    <button type="button" id="checkSaleBtn">检查</button>
+                <br><br>
+                <div id="downloadDiv" style="display: block">
+                    <h1>下载信息</h1>
+                    <label for="choose_sale_date_for_download">选择日期: </label>
+                    <input type="date" id="choose_sale_date_for_download" name="choose_sale_date_for_download"
+                           class="choose_date">
+                    <button type="button" id="downloadTotalBtn" onclick="downloadTotalExcel()">下载总表</button>
+                    <br>
+                    <label for="choose_dpm_name_for_download"> 选择门店: </label>
+                    <select name="department[]" id="choose_dpm_name_for_download" class="department"></select>
+                    <button type="button" id="downloadSubBtn" onclick="downloadSubExcel()">下载分表</button>
+                    <button type="button" id="downloadAllSubBtn" onclick="downloadAllSubExcel()">下载全部分表</button>
+                </div>
 
-    <table id="checkTable" class="border">
-        <thead>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
-</div>
+            </div>
+        </div>
 
+        <h1>预览</h1>
 
-<br>
+        <div id="checkSaleDiv" style="display: block">
+            <label for="choose_dpm_name_for_del"> 选择门店(可不选): </label>
+            <select name="department[]" id="choose_dpm_name_for_check" class="department"></select>
+            <label for="choose_sale_date_for_del">选择日期: </label>
+            <input type="date" id="choose_sale_date_for_check" name="choose_sale_date_for_check" class="choose_date">
+            <button type="button" id="checkSaleBtn">检查</button>
 
-<button onclick="toggleDiv('delSaleDiv', 'delSaleToggleBtn', 'delSaleToggleIcon')" id="delSaleToggleBtn">
-    删除销售数据<span id="delSaleToggleIcon">></span>
-</button>
-<div id="delSaleDiv" style="display: none">
-    <label for="choose_dpm_name_for_del"> 选择门店: </label>
-    <select name="department[]" id="choose_dpm_name_for_del" class="department"></select>
-    <label for="choose_sale_date_for_del">选择日期: </label>
-    <input type="date" id="choose_sale_date_for_del" name="choose_sale_date_for_del" class="choose_date">
-    <button type="button" id="delSaleBtn">删除</button>
-</div>
-
-<br><br>
-<button onclick="toggleDiv('downloadDiv', 'downloadToggleBtn', 'downloadToggleIcon')" id="downloadToggleBtn">
-    财务报表<span id="downloadToggleIcon">></span>
-</button>
-<div id="downloadDiv" style="display: none">
-    <label for="choose_sale_date_for_download">选择日期: </label>
-    <input type="date" id="choose_sale_date_for_download" name="choose_sale_date_for_download" class="choose_date">
-    <button type="button" id="downloadTotalBtn" onclick="downloadTotalExcel()">下载总表</button>
-    <br>
-    <label for="choose_dpm_name_for_download"> 选择门店: </label>
-    <select name="department[]" id="choose_dpm_name_for_download" class="department"></select>
-    <button type="button" id="downloadSubBtn" onclick="downloadSubExcel()">下载分表</button>
-    <button type="button" id="downloadAllSubBtn" onclick="downloadAllSubExcel()">下载全部分表</button>
-</div>
-
-<H1>门店信息</H1>
-<button onclick="toggleDiv('dpmDiv', 'dpmToggleBtn', 'dpmToggleIcon')" id="dpmToggleBtn">
-    修改门店信息<span id="dpmToggleIcon">></span>
-</button>
-<div id="dpmDiv" style="display: none">
-    <label for="add_dpm_name"> 添加门店: </label>
-    <input type="text" id="add_dpm_name" name="add_dpm_name">
-    <button type="button" id="addDpmBtn">添加</button>
-    <br>
-    <label for="del_dpm_name"> 删除门店: </label>
-    <select name="department[]" id="del_dpm_name" class="department"></select>
-    <button type="button" id="delDpmBtn">删除</button>
-</div>
+            <table id="checkTable" class="border">
+                <thead>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
 
 
-<H1>产品信息</H1>
-<button onclick="toggleDiv('productDiv', 'productToggleBtn', 'productToggleIcon')" id="productToggleBtn">
-    修改产品信息<span id="productToggleIcon">></span>
-</button>
-<div id="productDiv" style="display: none">
-    <label for="add_product_name"> 添加产品: </label>
-    <input type="text" id="add_product_name" name="add_product_name" placeholder="名称">
-    <input type="number" id="add_product_price" name="add_product_price" placeholder="价格">
-    <button type="button" id="addProductBtn">添加</button>
-    <br>
-    <label for="update_product_name"> 修改产品: </label>
-    <select name="product[]" id="update_product_name" class="product"></select>
-    <input type="number" id="update_product_price" name="update_product_price" placeholder="价格">
-    <button type="button" id="updateProductBtn">修改</button>
-    <br>
-    <label for="del_product_name"> 删除产品: </label>
-    <select name="product[]" id="del_product_name" class="product"></select>
-    <input type="number" id="del_product_price" name="del_product_price" placeholder="价格" readonly>
-    <button type="button" id="delProductBtn">删除</button>
+    </div>
+    <div class="left">
+
+        <H1>门店信息</H1>
+        <div id="dpmDiv" style="display: block">
+            <label for="add_dpm_name"> 添加门店: </label>
+            <input type="text" id="add_dpm_name" name="add_dpm_name">
+            <button type="button" id="addDpmBtn">添加</button>
+            <br>
+            <label for="del_dpm_name"> 删除门店: </label>
+            <select name="department[]" id="del_dpm_name" class="department"></select>
+            <button type="button" id="delDpmBtn">删除</button>
+        </div>
+
+
+        <H1>产品信息</H1>
+        <div id="productDiv" style="display: block">
+            <label for="add_product_name"> 添加产品: </label>
+            <input type="text" id="add_product_name" name="add_product_name" placeholder="名称">
+            <input type="number" id="add_product_price" name="add_product_price" placeholder="价格">
+            <button type="button" id="addProductBtn">添加</button>
+            <br>
+            <label for="update_product_name"> 修改产品: </label>
+            <select name="product[]" id="update_product_name" class="product"></select>
+            <input type="number" id="update_product_price" name="update_product_price" placeholder="价格">
+            <button type="button" id="updateProductBtn">修改</button>
+            <br>
+            <label for="del_product_name"> 删除产品: </label>
+            <select name="product[]" id="del_product_name" class="product"></select>
+            <input type="number" id="del_product_price" name="del_product_price" placeholder="价格" readonly>
+            <button type="button" id="delProductBtn">删除</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -607,7 +615,6 @@
                 const name = item['name'];
                 globalProducts[name] = item['price'];
             }
-            createSaleTable();
         } else if (type.includes("globalSales")) {
             globalSales = {};
             for (let i = 0; i < data.length; i++) {
@@ -618,7 +625,9 @@
             }
 
             const chooseDpmName = document.getElementById('choose_dpm_name');
-            createSaleTable(chooseDpmName.value);
+            if (chooseDpmName.value) {
+                createSaleTable(chooseDpmName.value);
+            }
         }
     }
 
@@ -637,7 +646,9 @@
 
         const clearSaleButton = document.getElementById('clearSaleButton');
         clearSaleButton.addEventListener('click', function () {
-            createSaleTable();
+            if (chooseDpmName.value) {
+                createSaleTable();
+            }
         });
     }
 
