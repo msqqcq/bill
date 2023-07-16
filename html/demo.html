@@ -147,19 +147,23 @@
 
         <H1>产品信息</H1>
         <div id="productDiv" style="display: block">
-            <label for="add_product_name"> 添加产品: </label>
+            添加产品: <br>
             <input type="text" id="add_product_name" name="add_product_name" placeholder="名称">
             <input type="number" id="add_product_price" name="add_product_price" placeholder="价格">
+            <select id="add_product_type" class="product_type"></select>
             <button type="button" id="addProductBtn">添加</button>
             <br>
-            <label for="update_product_name"> 修改产品: </label>
-            <select name="product[]" id="update_product_name" class="product"></select>
+            修改产品: <br>
+            <input name="product[]" id="update_product_name" class="product" list="product_options"/>
+            <datalist id="product_options"></datalist>
             <input type="number" id="update_product_price" name="update_product_price" placeholder="价格">
+            <select name="product_type[]" id="update_product_type" class="product_type"></select>
             <button type="button" id="updateProductBtn">修改</button>
             <br>
-            <label for="del_product_name"> 删除产品: </label>
-            <select name="product[]" id="del_product_name" class="product"></select>
+            删除产品: <br>
+            <input name="product[]" id="del_product_name" class="product" list="product_options"/>
             <input type="number" id="del_product_price" name="del_product_price" placeholder="价格" readonly>
+            <input type="text" id="del_product_type" name="del_product_type" readonly>
             <button type="button" id="delProductBtn">删除</button>
         </div>
     </div>
@@ -168,7 +172,7 @@
 <script>
     let globalProducts = {};
     let globalSales = {}
-    productPriceListening();
+    productListening();
     defualtToday(['choose_sale_date', 'choose_sale_date_for_del', 'choose_sale_date_for_check', 'choose_sale_date_for_download']);
     // 获取标题选项列表并填充下拉框
     fetchOptions('http://localhost:6060/list/dpm', '.department');
@@ -236,13 +240,14 @@
     addProductBtn.addEventListener('click', function () {
         const product_name = document.getElementById("add_product_name").value.trim();
         const product_price = document.getElementById("add_product_price").value.trim();
-        if (product_name && product_price) {
+        const product_type = document.getElementById("add_product_type").value.trim();
+        if (product_name && product_price && product_type) {
             fetch('http://localhost:6060/add/product', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({'name': product_name, 'price': product_price})
+                body: JSON.stringify({'name': product_name, 'price': product_price, 'type': product_type})
             })
                 .then(response => {
                     if (response.ok) {
@@ -261,13 +266,14 @@
     updateProductBtn.addEventListener('click', function () {
         const product_name = document.getElementById("update_product_name").value.trim();
         const product_price = document.getElementById("update_product_price").value.trim();
-        if (product_name && product_price) {
+        const product_type = document.getElementById("update_product_type").value.trim();
+        if (product_name && product_price && product_type) {
             fetch('http://localhost:6060/update/product', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({'name': product_name, 'price': product_price})
+                body: JSON.stringify({'name': product_name, 'price': product_price, 'type': product_type})
             })
                 .then(response => {
                     if (response.ok) {
@@ -395,7 +401,7 @@
                     const s = {};
                     s['dpm'] = dpm;
                     s['name'] = pname;
-                    s['price'] = parseInt(globalProducts[pname]);
+                    s['price'] = parseInt(globalProducts[pname]['price']);
                     s['num'] = parseInt(n.value);
                     s['comment'] = comment.value;
                     data.push(s);
@@ -487,7 +493,7 @@
             tbody.removeChild(tbody.firstChild);
         }
         for (const name in globalProducts) {
-            const price = globalProducts[name];
+            const price = globalProducts[name]['price'];
             const row = document.createElement("tr");
             const nameCell = document.createElement("td");
             const priceCell = document.createElement("td");
@@ -547,18 +553,33 @@
         }
     }
 
-    function productPriceListening() {
-        priceListening('update_product_name', 'update_product_price');
-        priceListening('del_product_name', 'del_product_price');
+    function productListening() {
+        product_Listening('update_product_name', 'update_product_price', 'update_product_type');
+        product_Listening('del_product_name', 'del_product_price', 'del_product_type');
+
+        const typeSelects = Array.from(document.querySelectorAll(".product_type"));
+        typeSelects.forEach(selectElement => {
+            const option1 = document.createElement('option');
+            option1.value = 'app';
+            option1.textContent = 'app';
+            const option2 = document.createElement('option');
+            option2.value = '冻结';
+            option2.textContent = '冻结';
+            selectElement.appendChild(option1);
+            selectElement.appendChild(option2);
+            selectElement.selectedIndex = 0;
+        })
     }
 
-    function priceListening(nameId, priceId) {
+    function product_Listening(nameId, priceId, typeId) {
         const name_elm = document.getElementById(nameId);
         name_elm.addEventListener("change", function () {
             const name = name_elm.value.trim();
             if (name && name !== 'NA') {
                 const price_elm = document.getElementById(priceId);
-                price_elm.value = globalProducts[name]
+                const type_elm = document.getElementById(typeId);
+                price_elm.value = globalProducts[name]['price']
+                type_elm.value = globalProducts[name]['type']
             }
         })
     }
@@ -610,10 +631,14 @@
     function saveGlobal(data, type) {
         if (type.includes(".product")) {
             globalProducts = {};
+            var dataList = document.getElementById("product_options");
             for (let i = 0; i < data.length; i++) {
                 const item = data[i];
                 const name = item['name'];
-                globalProducts[name] = item['price'];
+                globalProducts[name] = item;
+                var option = document.createElement("option");
+                option.value = name;
+                dataList.appendChild(option);
             }
         } else if (type.includes("globalSales")) {
             globalSales = {};

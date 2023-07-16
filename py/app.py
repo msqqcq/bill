@@ -28,6 +28,20 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
 log.addHandler(console_handler)
 
+row_count = 0
+
+
+def init():
+    with open(product_db, 'r') as file:
+        data = eval(json.dumps(json.load(file)))
+
+    for item in data["Product"]:
+        if data["Product"][item]['type'] is None:
+            data["Product"][item]['type'] = 'app'
+
+    with open(product_db, 'w') as file:
+        json.dump(data, file)
+
 
 def file(filename, data):
     response = make_response(data)
@@ -134,8 +148,13 @@ def update_prod():
         p = request.json
         if p is None or is_name_null(p['name']) or p['price'] is None:
             return error(400, "请填写数据")
-        update_product(p)
-        return ok()
+        else:
+            for pp in get_product():
+                if pp['name'] == p['name']:
+                    update_product(p)
+                    return ok()
+
+        return error(409, "[{}] 不存在".format(p['name']))
     except Exception as e:
         log.error(e)
         return error(500, "服务器出错")
@@ -165,6 +184,7 @@ def list_pd():
 def add_sale(date):
     try:
         sales = request.json
+        log.info(sales)
         if date == '' or sales is None or len(sales) == 0:
             return error(400, "请填写数据")
 
@@ -222,7 +242,7 @@ def download(date, dpm):
     try:
         if date == '':
             return error(400, "请填写日期")
-        bytes = generate_sub_excel(dpm, generate_table(date, dpm))
+        bytes = generate_excel(dpm, generate_table(date, dpm), date)
         if is_name_null(dpm):
             filename = '总表_{}.xlsx'.format(dpm, date)
         else:
@@ -233,7 +253,10 @@ def download(date, dpm):
         return error(500, "服务器出错")
 
 
-def generate_sub_excel(dpm, data):
+def generate_excel(dpm, data, date):
+    green_fill = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+    yellow_fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
+    bule_fill = PatternFill(start_color='ADD8E6', end_color='ADD8E6', fill_type='solid')
     # 创建工作簿和表格
     wb = Workbook()
     ws = wb.active
@@ -241,19 +264,33 @@ def generate_sub_excel(dpm, data):
     cells = get_excel_columns()
 
     if not is_name_null(dpm):
-        # excel title
         ws['A1'] = dpm
-        ws.merge_cells('A1:{}1'.format(cells[len(data[0])-1]))
-        merge_cell = ws['A1']
-        merge_cell.alignment = Alignment(horizontal='center', vertical='center')
-        merge_cell.font = Font(name='Arial', size=12, bold=True, color='000000')
-        merge_cell.fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
+    else:
+        ws['A1'] = date + ' 收入'
+    # excel title
+    ws.merge_cells('A1:{}1'.format(cells[len(data[0])-1]))
+    merge_cell = ws['A1']
+    merge_cell.alignment = Alignment(horizontal='center', vertical='center')
+    merge_cell.font = Font(name='Arial', size=12, bold=True, color='000000')
+    merge_cell.fill = yellow_fill
+
 
     for i in range(0, len(data)):
         row_data = data[i]
         for j in range(0, len(row_data)):
             idx = cells[j] + str(i + 2)
             ws[idx] = row_data[j]
+            # 颜色
+            if not is_name_null(dpm):
+                if row_data[1] == '收入':
+                    ws[idx].fill = green_fill
+                elif row_data[1] == '总计':
+                    ws[idx].fill = bule_fill
+            else:
+                if j == len(row_data)-1:
+                    ws[idx].fill = green_fill
+                elif j == len(row_data)-3 or (row_data[0] == '总计' and j < len(row_data)-3):
+                    ws[idx].fill = bule_fill
 
     # 将工作簿保存为字节流
     stream = BytesIO()
@@ -298,17 +335,38 @@ def generate_table(date, dpm=None):
         rows.append(row_end)
 
     else:
-        row1 = ['app', '下载', '备注', '价格', '总计']
-        rows.append(row1)
         count = 0
         price_count = 0
-        for sale in data:
+        income = 0
+        counter(0)
+
+        apps, freeze = split_sales_by_type(data)
+        row_app = [counter(), 'app', '下载', '备注', '价格', '总计']
+        rows.append(row_app)
+        for sale in apps:
             price = sale['num'] * sale['price']
-            row = [sale['name'], sale['num'], sale['comment'], sale['price'], price]
+            row = [counter(), sale['name'], sale['num'], sale['comment'], sale['price'], price]
             rows.append(row)
             count += sale['num']
             price_count += price
-        row_end = ['总计', count, '', '', price_count]
+        row_app_end = [counter(), '总计', count, '', '', price_count]
+        rows.append(row_app_end)
+        income += price_count
+        price_count = 0
+
+        row_freeze = [counter(), '冻结', '下载', '备注', '价格', '总计']
+        rows.append(row_freeze)
+        for sale in freeze:
+            price = sale['num'] * sale['price']
+            row = [counter(), sale['name'], sale['num'], sale['comment'], sale['price'], price]
+            rows.append(row)
+            count += sale['num']
+            price_count += price
+        row_freeze_end = [counter(), '总计', count, '', '', price_count]
+        rows.append(row_freeze_end)
+        income += price_count
+
+        row_end = [counter(), '收入', '', '', '', income]
         rows.append(row_end)
     return rows
 
@@ -321,6 +379,18 @@ def count_sale_with_dpm(pname, dpm, sales):
     if count == 0:
         return ''
     return str(count)
+
+
+def split_sales_by_type(sales):
+    apps = []
+    freeze = []
+    for s in sales:
+        if get_product_type(s['name']) == 'app':
+            apps.append(s)
+        else:
+            freeze.append(s)
+    return apps, freeze
+
 
 
 def get_dpm_and_products_from_sales(sales):
@@ -389,8 +459,16 @@ def update_product(p):
     db = TinyDB(product_db)
     table = db.table(product_table)
     Product = Query()
-    table.update({"price": p['price']}, Product.name == p['name'])
+    table.update({"price": p['price'], "type": p['type']}, Product.name == p['name'])
     db.close()
+
+
+def get_product_type(pname):
+    db = TinyDB(product_db)
+    table = db.table(product_table)
+    Product = Query()
+    p = table.get(Product.name == pname)
+    return p['type']
 
 
 def clear_sales(date, dpm=None):
@@ -433,5 +511,15 @@ def sale_db(date):
     return '{}sale{}.json'.format(db_dir, date)
 
 
+def counter(num=None):
+    global row_count
+    if num is None:
+        row_count += 1
+    else:
+        row_count = num
+    return row_count
+
+
 if __name__ == '__main__':
+    init()
     app.run(host='0.0.0.0', port=6060)
