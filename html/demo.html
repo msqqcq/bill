@@ -52,85 +52,16 @@
             width: 70%; /* 右边内容宽度占比 */
         }
 
+        .invalid-input {
+            border: 1px solid red;
+        }
+
     </style>
 </head>
 <body>
 
+
 <div class="container">
-    <div class="right">
-
-        <div class="container">
-            <div id="saleDiv" style="display: block; float: left; width: 50%">
-                <h1>售卖信息</h1>
-                <label for="choose_dpm_name"> 选择门店: </label>
-                <select name="department[]" id="choose_dpm_name" class="department"></select>
-                <label for="choose_sale_date">选择日期: </label>
-                <input type="date" id="choose_sale_date" name="choose_sale_date" class="choose_date">
-
-                <form id="addSaleForm">
-                    <table id="dataTable">
-                        <thead>
-                        <tr>
-                            <th>产品名称</th>
-                            <th>价格</th>
-                            <th>数量</th>
-                            <th>备注</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
-
-                    <button type="button" id="clearSaleButton">清空</button>
-                    <button type="submit">提交</button>
-                </form>
-            </div>
-
-            <div id="delSaleDiv" style="display: block; float: right; width: 50%">
-                <h1>删除信息</h1>
-                <label for="choose_dpm_name_for_del"> 选择门店: </label>
-                <select name="department[]" id="choose_dpm_name_for_del" class="department"></select><br>
-                <label for="choose_sale_date_for_del">选择日期: </label>
-                <input type="date" id="choose_sale_date_for_del" name="choose_sale_date_for_del"
-                       class="choose_date"><br>
-                <button type="button" id="delSaleBtn">删除</button>
-
-                <br><br>
-                <div id="downloadDiv" style="display: block">
-                    <h1>下载信息</h1>
-                    <label for="choose_sale_date_for_download">选择日期: </label>
-                    <input type="date" id="choose_sale_date_for_download" name="choose_sale_date_for_download"
-                           class="choose_date">
-                    <button type="button" id="downloadTotalBtn" onclick="downloadTotalExcel()">下载总表</button>
-                    <br>
-                    <label for="choose_dpm_name_for_download"> 选择门店: </label>
-                    <select name="department[]" id="choose_dpm_name_for_download" class="department"></select>
-                    <button type="button" id="downloadSubBtn" onclick="downloadSubExcel()">下载分表</button>
-                    <button type="button" id="downloadAllSubBtn" onclick="downloadAllSubExcel()">下载全部分表</button>
-                </div>
-
-            </div>
-        </div>
-
-        <h1>预览</h1>
-
-        <div id="checkSaleDiv" style="display: block">
-            <label for="choose_dpm_name_for_del"> 选择门店(可不选): </label>
-            <select name="department[]" id="choose_dpm_name_for_check" class="department"></select>
-            <label for="choose_sale_date_for_del">选择日期: </label>
-            <input type="date" id="choose_sale_date_for_check" name="choose_sale_date_for_check" class="choose_date">
-            <button type="button" id="checkSaleBtn">检查</button>
-
-            <table id="checkTable" class="border">
-                <thead>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
-        </div>
-
-
-    </div>
     <div class="left">
 
         <H1>门店信息</H1>
@@ -166,6 +97,92 @@
             <input type="text" id="del_product_type" name="del_product_type" readonly>
             <button type="button" id="delProductBtn">删除</button>
         </div>
+    </div>
+    <div id="saleDiv" style="display: block; float: left; width: 35%; left: 30%">
+        <h1>售卖信息</h1>
+        <label for="choose_dpm_name"> 选择门店: </label>
+        <select name="department[]" id="choose_dpm_name" class="department"></select>
+        <label for="choose_sale_date">选择日期: </label>
+        <input type="date" id="choose_sale_date" name="choose_sale_date" class="choose_date">
+
+        <form id="addSaleForm">
+            <table id="dataTable">
+                <thead>
+                <tr>
+                    <th style="min-width: 107px">产品名称</th>
+                    <th style="min-width: 60px">价格</th>
+                    <th>数量</th>
+                    <th>备注</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+
+            <table>
+                <thead></thead>
+                <tbody>
+                <tr>
+                    <datalist id="product_options_for_add_sale"></datalist>
+                    <th><input name="product[]" id="add_product_for_sale_row" class="product"
+                               list="product_options_for_add_sale"/></th>
+                    <th style="min-width: 60px"></th>
+                    <th style="min-width: 110px"></th>
+                    <th style="min-width: 110px"></th>
+                    <th>
+                        <button type="button" onclick="addSaleRow()" id="addSaleRowButton">+</button>
+                    </th>
+                </tr>
+                </tbody>
+            </table>
+
+            <button type="button" id="clearSaleButton">清空</button>
+            <button type="submit">提交</button>
+        </form>
+    </div>
+
+    <div id="delSaleDiv" style="display: block; float: right; width: 35%">
+        <h1>删除信息</h1>
+        <label for="choose_dpm_name_for_del"> 选择门店: </label>
+        <select name="department[]" id="choose_dpm_name_for_del" class="department"></select><br>
+        <label for="choose_sale_date_for_del">选择日期: </label>
+        <input type="date" id="choose_sale_date_for_del" name="choose_sale_date_for_del"
+               class="choose_date"><br>
+        <button type="button" id="delSaleBtn">删除</button>
+
+        <br><br>
+        <div id="downloadDiv" style="display: block">
+            <h1>下载信息</h1>
+            <label for="choose_sale_date_for_download">选择日期: </label>
+            <input type="date" id="choose_sale_date_for_download" name="choose_sale_date_for_download"
+                   class="choose_date">
+            <button type="button" id="downloadTotalBtn" onclick="downloadTotalExcel()">下载总表</button>
+            <br>
+            <label for="choose_dpm_name_for_download"> 选择门店: </label>
+            <select name="department[]" id="choose_dpm_name_for_download" class="department"></select>
+            <button type="button" id="downloadSubBtn" onclick="downloadSubExcel()">下载分表</button>
+            <button type="button" id="downloadAllSubBtn" onclick="downloadAllSubExcel()">下载全部分表</button>
+        </div>
+
+    </div>
+</div>
+
+<div style="text-align: center;">
+    <h1>预览</h1>
+    <div id="checkSaleDiv" style="display: block;text-align: center;">
+        <label for="choose_dpm_name_for_del"> 选择门店(可不选): </label>
+        <select name="department[]" id="choose_dpm_name_for_check" class="department"></select>
+        <label for="choose_sale_date_for_del">选择日期: </label>
+        <input type="date" id="choose_sale_date_for_check" name="choose_sale_date_for_check" class="choose_date">
+        <button type="button" id="checkSaleBtn">检查</button>
+
+        <table id="checkTable" class="border" style="margin-left: auto;margin-right: auto;">
+            <thead>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -486,52 +503,95 @@
             .catch(handleError);
     }
 
-    function createSaleTable(dpm = '') {
+    function createSaleTable(dpm) {
         const dataTable = document.getElementById('dataTable');
         const tbody = dataTable.querySelector("tbody");
         while (tbody.firstChild) {
             tbody.removeChild(tbody.firstChild);
         }
-        for (const name in globalProducts) {
-            const price = globalProducts[name]['price'];
-            const row = document.createElement("tr");
-            const nameCell = document.createElement("td");
-            const priceCell = document.createElement("td");
-            const numCell = document.createElement("td");
-            const commentCell = document.createElement("td");
+        let dataList = document.getElementById("product_options_for_add_sale");
+        while (dataList.firstChild) {
+            dataList.removeChild(dataList.firstChild);
+        }
+        for (const pname in globalProducts) {
+            let option = document.createElement("option");
+            option.value = pname;
+            dataList.appendChild(option);
+            createSaleRow(tbody, dpm, pname);
+        }
+    }
 
-            const numInput = document.createElement('input');
-            numInput.type = 'number';
-            numInput.name = 'num';
-            numInput.value = 0;
-            numInput.id = name + 'num';
+    function createSaleRow(tbody, dpm, pname, addRowIfNumZero = false) {
+        let addRow = true;
+        const price = globalProducts[pname]['price'];
+        const row = document.createElement("tr");
+        const nameCell = document.createElement("td");
+        const priceCell = document.createElement("td");
+        const numCell = document.createElement("td");
+        const commentCell = document.createElement("td");
+        const btnCell = document.createElement("td");
+
+        const numInput = document.createElement('input');
+        numInput.type = 'number';
+        numInput.name = 'num';
+        numInput.value = 0;
+        numInput.id = pname + 'num';
+
+        nameCell.textContent = pname;
+        priceCell.textContent = price;
+
+        const commentInput = document.createElement('input');
+        commentInput.type = 'text';
+        commentInput.name = 'comment';
+        commentInput.id = pname + 'comment';
 
 
-            nameCell.textContent = name;
-            // nameCell.setAttribute('name', 'pname');
-            priceCell.textContent = price;
-            // priceCell.setAttribute('name', 'price');
+        if (dpm && globalSales[dpm] && globalSales[dpm][pname]) {
+            numInput.value = globalSales[dpm][pname]['num'];
+            commentInput.value = globalSales[dpm][pname]['comment'];
+        } else if (!addRowIfNumZero) {
+            addRow = false;
+        }
+        numCell.appendChild(numInput);
+        commentCell.appendChild(commentInput);
 
-            const commentInput = document.createElement('input');
-            commentInput.type = 'text';
-            commentInput.name = 'comment';
-            commentInput.id = name + 'comment';
+        row.appendChild(nameCell);
+        row.appendChild(priceCell);
+        row.appendChild(numCell);
+        row.appendChild(commentCell);
 
+        if (addRow) {
+            row.id = pname + "SaleRow";
+            const delBtn = document.createElement('button');
+            delBtn.id = pname + "SaleRowDelBtn";
+            delBtn.name = "SaleRowDelBtn";
+            delBtn.textContent = '-';
+            delBtn.addEventListener('click', function () {
+                tbody.removeChild(row);
+                optionForDatalist("product_options_for_add_sale", pname)
+            });
 
-            if (dpm && globalSales[dpm] && globalSales[dpm][name]) {
-                numInput.value = globalSales[dpm][name]['num'];
-                commentInput.value = globalSales[dpm][name]['comment'];
-            }
-            numCell.appendChild(numInput);
-            // numCell.setAttribute('name', 'num');
-            commentCell.appendChild(commentInput);
-            // commentCell.setAttribute('name', 'comment');
-
-            row.appendChild(nameCell);
-            row.appendChild(priceCell);
-            row.appendChild(numCell);
-            row.appendChild(commentCell);
+            btnCell.appendChild(delBtn);
+            row.appendChild(btnCell);
             tbody.appendChild(row);
+            optionForDatalist("product_options_for_add_sale", pname, false)
+        }
+    }
+
+    function optionForDatalist(id, value, isAdd = true) {
+        let dataList = document.getElementById(id);
+        let options = dataList.options;
+        if (isAdd) {
+            const option = document.createElement("option");
+            option.value = value;
+            dataList.appendChild(option);
+        } else {
+            for (let i = 0; i < options.length; i++) {
+                if (value === options[i].value) {
+                    dataList.removeChild(options[i]);
+                    break;
+                }
+            }
         }
     }
 
@@ -671,10 +731,42 @@
 
         const clearSaleButton = document.getElementById('clearSaleButton');
         clearSaleButton.addEventListener('click', function () {
-            if (chooseDpmName.value) {
-                createSaleTable();
+            const btns = Array.from(document.querySelectorAll('[name="SaleRowDelBtn"]'));
+            for (const btn of btns) {
+                btn.click();
             }
         });
+    }
+
+    function addSaleRow() {
+        const dpm = document.getElementById('choose_dpm_name').value;
+        if (dpm) {
+            const pnameEle = document.getElementById('add_product_for_sale_row');
+            const pname = pnameEle.value.trim();
+
+            let isPnameSatisfy = false;
+            if (pname) {
+                let options = document.getElementById("product_options_for_add_sale").options;
+                for (let i = 0; i < options.length; i++) {
+                    if (pname === options[i].value) {
+                        isPnameSatisfy = true;
+                        break;
+                    }
+                }
+            }
+
+            if (isPnameSatisfy) {
+                const dataTable = document.getElementById('dataTable');
+                const tbody = dataTable.querySelector("tbody");
+                createSaleRow(tbody, dpm, pname, true);
+                pnameEle.value = "";
+                pnameEle.classList.remove('invalid-input');
+            } else {
+                pnameEle.classList.add('invalid-input');
+            }
+        } else {
+            alert("请选择门店");
+        }
     }
 
     function handleResult(result) {
