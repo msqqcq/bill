@@ -36,7 +36,7 @@ def init():
         data = eval(json.dumps(json.load(file)))
 
     for item in data["Product"]:
-        if data["Product"][item]['type'] is None:
+        if 'type' not in data["Product"][item]:
             data["Product"][item]['type'] = 'app'
 
     with open(product_db, 'w') as file:
@@ -396,7 +396,10 @@ def generate_table(date, dpm=None):
         row_app_end = [counter(), '总计', count, '', '', price_count]
         rows.append(row_app_end)
         income += price_count
+
+        # clear count for app
         price_count = 0
+        count = 0
 
         row_freeze = [counter(), '冻结', '下载', '备注', '价格', '总计']
         rows.append(row_freeze)
