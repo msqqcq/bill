@@ -425,7 +425,7 @@ def count_old_pension(comment):
             if "+" in comment:
                 datas = comment.strip().split("+")
             else:
-                datas = comment.strip()
+                datas = [comment.strip()]
             for data in datas:
                 if "*" in comment:
                     cal = data.strip().split("*")

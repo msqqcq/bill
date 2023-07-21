@@ -56,6 +56,28 @@
             border: 1px solid red;
         }
 
+        button{
+            border: 1px solid #84F8EF ;
+            font-family: monospace;
+            font-size: 4px;
+            /*width: 50px;*/
+            height: 20px;
+            text-align: center;
+            line-height: 10px;
+            border-radius: 20px;
+            color: #DBD1F5;
+            background-color: #F59A43 ;
+            transition: 2s;
+        }
+        button:hover{
+            color: white;
+            background-color: #8FF962 ;
+            box-shadow: 2px 2px 10px #8FF962 ,
+            -2px 2px 10px #D1F276,
+            2px -2px 10px #D1F276,
+            -2px -2px 10px #D1F276;
+        }
+
     </style>
 </head>
 <body>
@@ -125,20 +147,21 @@
                 <tbody>
                 <tr>
                     <datalist id="product_options_for_add_sale"></datalist>
-                    <th><input name="product[]" id="add_product_for_sale_row" class="product"
+                    <th><input style="text-align: center" name="product[]" id="add_product_for_sale_row" class="product"
                                list="product_options_for_add_sale"/></th>
                     <th style="min-width: 60px"></th>
                     <th style="min-width: 110px"></th>
-                    <th style="min-width: 110px"></th>
+                    <th style="min-width: 111.5px"></th>
                     <th>
                         <button type="button" onclick="addSaleRow()" id="addSaleRowButton">+</button>
                     </th>
                 </tr>
                 </tbody>
             </table>
-
+            <div style="text-align: center; width: 80%">
             <button type="button" id="clearSaleButton">清空</button>
             <button type="submit">提交</button>
+            </div>
         </form>
     </div>
 
