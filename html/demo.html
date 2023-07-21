@@ -29,13 +29,20 @@
             text-align: center;
         }
 
-        table.border {
-            border-collapse: collapse; /* 合并单元格边框 */
-            border: 1px solid black; /* 设置表格整体边框样式 */
+        .table-style {
+            border-collapse: collapse;
         }
-
-        table.border th, table.border td {
-            border: 1px solid black; /* 设置表格整体边框样式 */
+        .table-style th {
+            background-color: #f2f2f2;
+            border: 1px solid #dddddd;
+            padding: 8px;
+        }
+        .table-style td {
+            border: 1px solid #dddddd;
+            padding: 8px;
+        }
+        .table-style tr:nth-child(even) {
+            background-color: #f2f2f2;
         }
 
         .container {
@@ -200,7 +207,7 @@
         <input type="date" id="choose_sale_date_for_check" name="choose_sale_date_for_check" class="choose_date">
         <button type="button" id="checkSaleBtn">检查</button>
 
-        <table id="checkTable" class="border" style="margin-left: auto;margin-right: auto;">
+        <table id="checkTable" class="table-style" style="margin-left: auto;margin-right: auto;">
             <thead>
             </thead>
             <tbody>

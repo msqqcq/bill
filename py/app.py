@@ -353,7 +353,7 @@ def generate_table(date, dpm=None):
                 pension = count_old_pension(s['comment'])
                 if pension < 0:  # 如果计算出错，直接将最后一格填充：养老金的券格式有问题，无法计算
                     old_count = -1
-                    sale_with_old_pension = []
+                    # sale_with_old_pension = []
                     break
                 else:
                     old_count += pension
@@ -427,7 +427,7 @@ def count_old_pension(comment):
             else:
                 datas = [comment.strip()]
             for data in datas:
-                if "*" in comment:
+                if data and "*" in comment:
                     cal = data.strip().split("*")
                     count += int(cal[0]) * int(cal[1])
         return count
