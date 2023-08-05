@@ -187,7 +187,7 @@ def add_sale(date):
         if date == '' or sales is None or len(sales) == 0:
             return error(400, "请填写数据")
 
-        sales = [s for s in sales if s['num'] > 0]
+        sales = [s for s in sales if s['num'] > 0 or s['comment']]
         clear_sales(date, sales[0]['dpm'])
         add_sales(date, sales)
         return ok()
@@ -472,7 +472,7 @@ def get_dpm_and_products_from_sales(sales):
                 products[s['name']]['num'] += s['num']
     except Exception as e:
         log.error("error", e)
-    return dpms, products
+    return dpms, dict(sorted(products.items(), key=lambda x: get_product_type(x[0])))
 
 
 def get_department():
