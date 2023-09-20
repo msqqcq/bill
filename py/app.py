@@ -1,6 +1,6 @@
 from tinydb import TinyDB, Query
 from flask import Flask, make_response, jsonify, request
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_cors import CORS
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill
@@ -436,7 +436,7 @@ def count_old_pension(comment):
             for data in datas:
                 if data and "*" in comment:
                     cal = data.strip().split("*")
-                    count += int(cal[0]) * int(cal[1])
+                    count += float(cal[0]) * float(cal[1])
         return count
     except Exception as e:
         return -1
@@ -531,6 +531,7 @@ def update_product(p):
     Product = Query()
     table.update({"price": p['price'], "type": p['type']}, Product.name == p['name'])
     db.close()
+    update_sales_price(p['price'], p['name'])
 
 
 def get_product_type(pname):
@@ -540,6 +541,18 @@ def get_product_type(pname):
     p = table.get(Product.name == pname)
     return p['type']
 
+
+def update_sales_price(price, product):
+    price = float(price)
+    today = datetime.today().date().strftime('%Y-%m-%d')
+    yesterday = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
+    dates = [today, yesterday]
+    for date in dates:
+        db = TinyDB(sale_db(date))
+        table = db.table(sale_table)
+        Sale = Query()
+        table.update({"price": price}, Sale.name == product)
+        db.close()
 
 def clear_sales(date, dpm=None):
     db = TinyDB(sale_db(date))
@@ -568,7 +581,7 @@ def get_sales(date, dpm=None):
         Sale = Query()
         data = table.search(Sale.dpm == dpm)
     db.close()
-    return data
+    return sorted(data, key=lambda x: x['name'])
 
 
 def get_old_pensions(date):
