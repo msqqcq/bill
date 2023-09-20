@@ -415,6 +415,13 @@ def generate_table(date, dpm=None):
 
         row_end = [counter(), '收入', '', '', '', income]
         rows.append(row_end)
+
+    for row in rows:
+        if isinstance(row[-1], (int, float)):
+            row[-1] = round(row[-1], 2)
+        if isinstance(row[-2], (int, float)):
+            row[-2] = round(row[-2], 2)
+    # rows = [[round(cell, 2) if isinstance(cell, (int, float)) else cell for cell in row] for row in rows]
     return rows
 
 

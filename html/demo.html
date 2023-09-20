@@ -448,7 +448,7 @@
                     const s = {};
                     s['dpm'] = dpm;
                     s['name'] = pname;
-                    s['price'] = parseInt(globalProducts[pname]['price']);
+                    s['price'] = parseFloat(globalProducts[pname]['price']);
                     s['num'] = parseInt(n.value);
                     s['comment'] = comment.value;
                     data.push(s);
