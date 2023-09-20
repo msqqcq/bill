@@ -389,6 +389,8 @@ def generate_table(date, dpm=None):
         rows.append(row_app)
         for sale in apps:
             price = sale['num'] * sale['price']
+            if sale['comment']:
+                price += count_old_pension(sale['comment'])
             row = [counter(), sale['name'], sale['num'], sale['comment'], sale['price'], price]
             rows.append(row)
             count += sale['num']
@@ -421,7 +423,6 @@ def generate_table(date, dpm=None):
             row[-1] = round(row[-1], 2)
         if isinstance(row[-2], (int, float)):
             row[-2] = round(row[-2], 2)
-    # rows = [[round(cell, 2) if isinstance(cell, (int, float)) else cell for cell in row] for row in rows]
     return rows
 
 
